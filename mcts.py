@@ -2,8 +2,13 @@ import random
 import math
 import time
 
+from numba import jit
+
 from game import Game
 import numpy as np
+
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
 
 class Node:
     C = 1
@@ -49,6 +54,7 @@ class Node:
         actions = self.game_state.get_valid_moves()
         if len(actions) == 0:
             return
+
         for a in actions:
             child_game,_,_ = self.game_state.apply_move(a)
             child_node = Node(child_game, self, 1 - self.player, a)
@@ -81,11 +87,12 @@ class Node:
         return Node(game, None, 0, None)
 
 if __name__ == "__main__":
-    game = Game.new()
-    game.print()
-    mcts = Node.new_mcts_root(game)
-    move = Node.run_mcts(mcts)
-    print("Choosen move:", move)
+    with PyCallGraph(output=GraphvizOutput()):
+        game = Game.new()
+        game.print()
+        mcts = Node.new_mcts_root(game)
+        move = Node.run_mcts(mcts)
+        print("Choosen move:", move)
 
 
 
