@@ -2,13 +2,9 @@ import random
 import math
 import time
 
-from numba import jit
 
 from game import Game
 import numpy as np
-
-from pycallgraph import PyCallGraph
-from pycallgraph.output import GraphvizOutput
 
 class Node:
     C = 1
@@ -66,7 +62,7 @@ class Node:
         if len(self.children) == 0:
             return self
 
-        sign = -1 if self.player == 1 else 0
+        sign = -1 if self.player == 1 else 0 # 1
 
         UCT_scores = [sign * child.W / child.N + Node.C * math.sqrt(math.log(self.N)/child.N) for child in self.children]
         chosen_child_idx = np.argmax(UCT_scores)
@@ -87,12 +83,11 @@ class Node:
         return Node(game, None, 0, None)
 
 if __name__ == "__main__":
-    with PyCallGraph(output=GraphvizOutput()):
-        game = Game.new()
-        game.print()
-        mcts = Node.new_mcts_root(game)
-        move = Node.run_mcts(mcts)
-        print("Choosen move:", move)
+    game = Game.new()
+    game.print()
+    mcts = Node.new_mcts_root(game)
+    move = Node.run_mcts(mcts)
+    print("Choosen move:", move)
 
 
 

@@ -237,7 +237,7 @@ function winsMilestone(prevSide, currSide, justPlayedCard)
     end
 end
 
-#function testgame()
+function testgame()
     game = Schotten()
     wins = false
     while !wins
@@ -257,4 +257,4 @@ end
         # sleep(1)
         println("\n\n@@@@@@@@@@@@@ New Turn @@@@@@@@@@@@@@@\n")
     end
-#end
+end

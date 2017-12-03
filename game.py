@@ -2,8 +2,6 @@ import random
 from copy import copy
 import time
 
-from numba import jit
-
 class Game:
     def __init__(self, prev_player_hand, board, next_player_hand, deck):
         self.prev_player_hand = prev_player_hand
@@ -35,14 +33,11 @@ class Game:
         return Game(prev_player_hand, board, next_player_hand, deck)
 
 
-
-    @jit
     def get_valid_moves(self):
         milestone_choice = [i for i in range(9)  if self.board[i*7 + 3] == 0 and any([self.board[i*7 + j] == 0 for j in range(4, 7)])]
         card_choice = [i for i in range(6) if self.next_player_hand[i] != 0]
         return [(card, milestone) for card in card_choice for milestone in milestone_choice]
 
-    @jit
     def apply_move(self, move):
         card_idx, milestone_idx = move
         # swap board
