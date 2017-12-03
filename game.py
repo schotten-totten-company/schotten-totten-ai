@@ -92,6 +92,8 @@ class Game:
                 strike = 0
         precWon = strike == 3 or total == 5
 
+        #bug on strike cf julia
+
         strike = 0
         total = 0
         for i in range(9):
@@ -158,7 +160,7 @@ class Game:
             total = sum(numbers)
             total += 100 if sum([x - y for x,y in zip(numbers[1:], numbers[:-1])]) == len(numbers) - 1 else 0 # suite
             total += 200 if colors.count(colors[0]) == len(colors) else 0 # couleur
-            total += 250 if numbers.count(colors[0]) == len(numbers) else 0 # brelan
+            total += 250 if numbers.count(numbers[0]) == len(numbers) else 0 # brelan
             return total
 
        

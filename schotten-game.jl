@@ -58,9 +58,92 @@ end
 # end
 
 function getvalidmoves(game::Schotten)
-    milestone_choice = [i for i=1:NB_MILESTONES  if game.board[5,i] == 0 && any(game.board[6:end,i])]
+    milestone_choice = [i for i=1:NB_MILESTONES  if game.board[4,i] == 0 && any(game.board[5:end,i] .== 0)]
     card_choice = [i for i=1:NB_CARDS_IN_HAND if  game.next_player_hand[i] != 0]
     return [(card, milestone) for card in card_choice for milestone in milestone_choice]
+end
+
+function applymove(game, move)
+    card_idx, milestone_idx = move
+
+    # swap board
+    new_board = [game.board[j, i] for j=[5, 6, 7, 4, 1, 2, 3],i=1:9]
+
+    ## swap milestones
+    for i=1:9
+        milestone = new_board[4, i]
+        if milestone == 1
+            new_board[4, i] = 2
+        elseif milestone == 2
+            new_board[4, i] = 1
+        else
+            new_board[4, i] = 0 
+        end
+    end
+
+    j=1
+    while new_board[j, milestone_idx] != 0
+        j += 1
+    end
+
+    assert(j < 4)
+ 
+
+
+    # play card
+    new_board[j, milestone_idx] = game.next_player_hand[card_idx]
+
+    new_prev_player_hand = copy(game.next_player_hand)
+    new_deck = copy(game.deck)
+
+    # draw card
+    if length(new_deck) == 0
+        new_prev_player_hand[card_idx] = 0
+    else
+        drawn_card = new_deck[1]
+        new_deck = new_deck[2:end]
+        new_prev_player_hand[card_idx] = drawn_card
+    end
+
+    # check if can reclaim milestone
+    for i in 1:9
+        if new_board[4, i] == 0
+            new_board[4, i] = winsMilestone(new_board[5:7, i], new_board[1:3, i], i == milestone_idx)
+        end
+    end
+
+    # check if finished (current player wins)
+    strike = 0
+    total = 0
+    for i in 1:9
+        if new_board[4,i] == 1
+            total += 1
+            strike += 1
+        else
+            strike = 0
+        end
+        if strike == 3
+            break
+        end
+    end
+    precWon = strike == 3 || total == 5
+
+    strike = 0
+    total = 0
+    for i in 1:9
+        if new_board[4, i] == 2
+            total += 1
+            strike += 1
+        else
+            strike = 0
+        end
+        if strike == 3
+            break
+        end        
+    end
+    curWon = strike == 3 || total == 5
+
+    return Schotten(new_prev_player_hand, new_board, copy(game.prev_player_hand), new_deck), curWon, precWon
 end
 
 function Base.show(io::IO, game::Schotten)
@@ -119,5 +202,59 @@ function Base.show(io::IO, game::Schotten)
     println(deck)
 end
 
+function count(array, elem)
+    count = 0
+    for a in array
+        count += a == elem ? 1 : 0 
+    end
+end
 
-# TODO: board to matrix
+function evaluateside(side)
+    numbers = sort([div(i, 10) for i=side])
+    colors = [i % 10 for i=side]
+    total = sum(numbers)
+    total += sum([x - y for (x,y)=zip(numbers[2:end], numbers[1:end-1])]) == length(numbers) - 1 ? 100 : 0 # suite
+    total += count(colors, colors[1]) == length(colors) ? 100 :  0 # couleur
+    total += count(numbers, numbers[1]) == length(numbers) ? 100 : 0 # brelan
+    return total
+end
+
+
+function winsMilestone(prevSide, currSide, justPlayedCard)
+    if !(all([el != 0 for el=prevSide]) && all([el != 0 for el=currSide]))
+         return 0
+    end
+
+    prevSideScore = evaluateside(prevSide)
+    currSideScore = evaluateside(currSide)
+
+    if prevSideScore == currSideScore
+        return justPlayedCard ? 1 : 2 
+    elseif prevSideScore > currSideScore
+        return 1
+    else
+        return 2
+    end
+end
+
+#function testgame()
+    game = Schotten()
+    wins = false
+    while !wins
+        println(game)
+        moves = getvalidmoves(game)
+        game, topWon, bottomWon =  applymove(game, rand(moves))
+        if topWon
+            println(game)
+            println("### TOP WIN ###")
+            break
+        end
+        if bottomWon
+            println(game)
+            println("### BOTTOM WIN ###")
+            break
+        end
+        # sleep(1)
+        println("\n\n@@@@@@@@@@@@@ New Turn @@@@@@@@@@@@@@@\n")
+    end
+#end
