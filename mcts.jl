@@ -3,12 +3,12 @@ include("./schotten-game.jl")
 const C = 1
 
 mutable struct Node
-    game_state
+    game_state::Schotten
     N::UInt
     W::Int
     parent::Nullable{Node}
-    move
-    player
+    move:: Tuple{Int64, Int64}
+    player::Int
     children::Array{Node, 1}
     function Node(game, parent::Nullable{Node}, player, move)
         @assert player==0 || player==1
@@ -115,11 +115,18 @@ end
     
 Node(game) = Node(game, Nullable{Node}(), 0, (0,0))
 
-game = Schotten()
-# println(game)
-mcts = Node(game)
-move = run_mcts!(mcts)
-println("Choosen move:", move)
+function testperf(numiter, time_budget=10)
+    for i in 1:numiter
+        game = Schotten()
+        # println(game)
+        mcts = Node(game)
+        move = run_mcts!(mcts, time_budget)
+        println("Choosen move:", move)
+    end
+end
 
+testperf(1,1)
 
+Profile.clear()
+@profile testperf(1)
 

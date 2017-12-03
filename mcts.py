@@ -68,7 +68,7 @@ class Node:
         chosen_child_idx = np.argmax(UCT_scores)
         return self.children[chosen_child_idx].select()
 
-    def run_mcts(node, time_budget=10):
+    def run_mcts(node, time_budget=1):
         start_time = time.process_time()
         nb_selected_node = 0
         while time.process_time() - start_time < time_budget:
