@@ -1,3 +1,5 @@
+
+
 include("./schotten-game.jl")
 
 const C = 1
@@ -127,6 +129,11 @@ end
 
 testperf(1,1)
 
+
+using ProfileView
+
 Profile.clear()
 @profile testperf(1)
+
+ProfileView.view()
 

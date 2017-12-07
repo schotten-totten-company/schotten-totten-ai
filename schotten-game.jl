@@ -57,8 +57,10 @@ end
 #     )
 # end
 
+
+
 function getvalidmoves(game::Schotten)
-    milestone_choice = [i for i=1:NB_MILESTONES  if game.board[4,i] == 0 && any(game.board[5:end,i] .== 0)]
+    milestone_choice = [i for i=1:NB_MILESTONES  if game.board[4,i] == 0 && countnz(game.board[5:end,i]) < 3]
     card_choice = [i for i=1:NB_CARDS_IN_HAND if  game.next_player_hand[i] != 0]
     return [(card, milestone) for card in card_choice for milestone in milestone_choice]
 end
