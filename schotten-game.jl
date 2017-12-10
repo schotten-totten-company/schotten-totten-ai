@@ -1,5 +1,5 @@
 const Byte=UInt8
-const ByteArray=Vector{Byte}
+const ByteVector=Vector{Byte}
 const ByteMatrix=Array{Byte, 2}
 
 
@@ -10,39 +10,57 @@ const NB_CARDS_IN_HAND = 6
 const NB_CARDS_ON_BOARD = NB_MILESTONES*NB_SLOT_IN_MILESTONE
 const BOARD_SIZE = (NB_SLOT_IN_MILESTONE, NB_MILESTONES)
 
-struct Schotten
-    prev_player_hand::ByteArray
+@enum Player::Byte none top bottom
+
+mutable struct Schotten
+    
+    top_hand::ByteVector
     board::ByteMatrix
-    next_player_hand::ByteArray
-    deck::ByteArray
+    bottom_hand::ByteVector
+    deck::ByteVector
+    turn::Player
+    
     milestone_choice::Vector{Int}
     card_choice::Vector{Int}
     valid_moves::Vector{Tuple{Int, Int}}
-    function Schotten(prev_player_hand::ByteArray, board::ByteMatrix, next_player_hand::ByteArray, deck::ByteArray)
-        @assert length(prev_player_hand) == NB_CARDS_IN_HAND
-        @assert length(next_player_hand) == NB_CARDS_IN_HAND
+    
+    function Schotten(top_hand::ByteVector, board::ByteMatrix, bottom_hand::ByteVector, deck::ByteVector, turn::Player)
+        @assert length(top_hand) == NB_CARDS_IN_HAND
+        @assert length(bottom_hand) == NB_CARDS_IN_HAND
         @assert size(board) == BOARD_SIZE
 
-        new(prev_player_hand, board, next_player_hand, deck,Int[],Int[],Tuple{Int, Int}[])
+        new(top_hand, board, bottom_hand, deck, turn, Int[],Int[],Tuple{Int, Int}[])
     end
 end
 
-generatedeck() = shuffle(Byte[i*10 + j for i=1:NB_MILESTONES for j=1:NB_SLOT_IN_MILESTONE]::ByteArray)
+generatedeck() = shuffle(Byte[i*10 + j for i=1:NB_MILESTONES for j=1:NB_SLOT_IN_MILESTONE]::ByteVector)
 
 function Schotten()
     deck = generatedeck()
-    prev_player_hand = deck[1:NB_CARDS_IN_HAND]
+    top_hand = deck[1:NB_CARDS_IN_HAND]
     deck = deck[NB_CARDS_IN_HAND+1:end]
     board = zeros(Byte, BOARD_SIZE)
-    next_player_hand = deck[1:NB_CARDS_IN_HAND]
+    bottom_hand = deck[1:NB_CARDS_IN_HAND]
     deck = deck[NB_CARDS_IN_HAND+1:end]
+    turn = top
     Schotten(
-        prev_player_hand,
+        top_hand,
         board,
-        next_player_hand,
-        deck
+        bottom_hand,
+        deck,
+        top
     )
 end
+
+# function make_copy(game::Schotten)::Schotten 
+#     Schotten(
+#         copy(game.top_hand), 
+#         copy(game.board),
+#         copy(game.bottom_hand),
+#         copy(game.deck),
+#         game.turn
+#     )
+# end
 
 # function Schotten(player_view)
 #     deck = Game.generate_deck()
@@ -65,13 +83,22 @@ function getvalidmoves(game::Schotten)
     resize!(game.milestone_choice, 0)
     resize!(game.card_choice, 0)
     resize!(game.valid_moves, 0)
+    if game.turn == top
+        milestone_idx = 1:3
+        hand = game.top_hand
+    else #bottom
+        @assert game.turn == bottom
+        milestone_idx = 5:7
+        hand = game.bottom_hand
+    end
+
     for i = 1:NB_MILESTONES
-        if game.board[4,i] == 0 && @views countnz(game.board[5:end, i]) < 3
+        if game.board[4,i] == 0 && @views countnz(game.board[milestone_idx, i]) < 3
             push!(game.milestone_choice, i)
         end
     end
     for i = 1:NB_CARDS_IN_HAND
-        if game.next_player_hand[i] != 0
+        if hand[i] != 0
             push!(game.card_choice, i)
         end
     end
@@ -81,52 +108,43 @@ function getvalidmoves(game::Schotten)
 return game.valid_moves
 end
 
-function applymove(game, move)
+function applymove!(game, move)
     card_idx, milestone_idx = move
 
-    # swap board
-    new_board = [game.board[j, i] for j=[5, 6, 7, 4, 1, 2, 3],i=1:9]
+    @views milestone_line = game.board[4,:]
 
-    ## swap milestones
-    for i=1:9
-        milestone = new_board[4, i]
-        if milestone == 1
-            new_board[4, i] = 2
-        elseif milestone == 2
-            new_board[4, i] = 1
-        else
-            new_board[4, i] = 0 
-        end
+
+    if game.turn == top
+        hand = game.top_hand
+        @views new_board = game.board[1:3, :]
+    else # botttom
+        @assert game.turn == bottom
+        hand = game.bottom_hand
+        @views new_board = game.board[5:end, :]
     end
-
+        
     j=1
     while new_board[j, milestone_idx] != 0
         j += 1
     end
 
     assert(j < 4)
- 
 
 
     # play card
-    new_board[j, milestone_idx] = game.next_player_hand[card_idx]
-
-    new_prev_player_hand = copy(game.next_player_hand)
-    new_deck = copy(game.deck)
+    new_board[j, milestone_idx] = hand[card_idx]
 
     # draw card
-    if length(new_deck) == 0
-        new_prev_player_hand[card_idx] = 0
+    if length(game.deck) == 0
+        hand[card_idx] = 0
     else
-        drawn_card = new_deck[1]
-        new_deck = new_deck[2:end]
-        new_prev_player_hand[card_idx] = drawn_card
+        hand[card_idx] = pop!(game.deck)
     end
 
     # check if can reclaim milestone
     for i in 1:9
-        if new_board[4, i] == 0
-            new_board[4, i] = winsMilestone(new_board[5:7, i], new_board[1:3, i], i == milestone_idx)
+        if milestone_line[i] == 0
+            @views milestone_line[i] = winsMilestone(game.board[5:7, i], game.board[1:3, i], i == milestone_idx)
         end
     end
 
@@ -134,7 +152,7 @@ function applymove(game, move)
     strike = 0
     total = 0
     for i in 1:9
-        if new_board[4,i] == 1
+        if milestone_line[i] == Byte(top)
             total += 1
             strike += 1
         else
@@ -144,12 +162,15 @@ function applymove(game, move)
             break
         end
     end
-    precWon = strike == 3 || total == 5
+    if strike == 3 || total == 5
+        return top
+    end
+
 
     strike = 0
     total = 0
     for i in 1:9
-        if new_board[4, i] == 2
+        if milestone_line[i] == Byte(bottom)
             total += 1
             strike += 1
         else
@@ -159,21 +180,25 @@ function applymove(game, move)
             break
         end        
     end
-    curWon = strike == 3 || total == 5
+    if strike == 3 || total == 5
+        return bottom
+    end
 
-    return Schotten(new_prev_player_hand, new_board, copy(game.prev_player_hand), new_deck), curWon, precWon
+    game.turn = game.turn == top ? bottom : top
+
+    return none
 end
 
 function Base.show(io::IO, game::Schotten)
     hand = "    "
-    for i=game.prev_player_hand
+    for i=game.top_hand
         hand *= lpad(string(i), 2,'0') * " "
     end
     println(io, hand)
 
     toto = ""
     for i=game.board[4, :]
-        if i == 2
+        if i == Byte(top)
             toto *= "MM "
         else
             toto *= "   "
@@ -199,7 +224,7 @@ function Base.show(io::IO, game::Schotten)
 
     toto = ""
     for i=game.board[4, :]
-        if i == 1
+        if i == Byte(bottom)
             toto *= "MM "
         else
             toto *= "   "
@@ -208,7 +233,7 @@ function Base.show(io::IO, game::Schotten)
     println(io, toto)
 
     hand = "    "
-    for i=game.next_player_hand
+    for i=game.bottom_hand
         hand *= lpad(string(i), 2,'0') * " "
     end
     println(io, hand)
@@ -238,20 +263,20 @@ function evaluateside(side)
 end
 
 
-function winsMilestone(prevSide, currSide, justPlayedCard)
-    if !(all([el != 0 for el=prevSide]) && all([el != 0 for el=currSide]))
-         return 0
+function winsMilestone(topSide, bottomSide, justPlayedCard)
+    if (countnz(topSide) < 3  ||  countnz(bottomSide) < 3)
+         return none
     end
 
-    prevSideScore = evaluateside(prevSide)
-    currSideScore = evaluateside(currSide)
+    topSideScore = evaluateside(topSide)
+    bottomSideScore = evaluateside(bottomSide)
 
-    if prevSideScore == currSideScore
-        return justPlayedCard ? 1 : 2 
-    elseif prevSideScore > currSideScore
-        return 1
+    if topSideScore == bottomSideScore
+        return justPlayedCard == top ? bottom : top # the first who have played the card wins
+    elseif topSideScore > bottomSideScore
+        return top
     else
-        return 2
+        return bottom
     end
 end
 
@@ -261,17 +286,18 @@ function testgame()
     while !wins
         println(game)
         moves = getvalidmoves(game)
-        game, topWon, bottomWon =  applymove(game, rand(moves))
-        if topWon
+        winner =  applymove!(game, rand(moves))
+        if winner == top
             println(game)
             println("### TOP WIN ###")
             break
-        end
-        if bottomWon
+        end 
+        if winner == bottom
             println(game)
             println("### BOTTOM WIN ###")
             break
         end
+        # println(game.board[4, :])
         # sleep(1)
         println("\n\n@@@@@@@@@@@@@ New Turn @@@@@@@@@@@@@@@\n")
     end

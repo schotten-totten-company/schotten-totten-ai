@@ -9,11 +9,11 @@ mutable struct Node
     N::UInt
     W::Int
     parent::Nullable{Node}
-    move:: Tuple{Int64, Int64}
-    player::Int
+    move::Tuple{Int64, Int64}
+    player::Player
     children::Array{Node, 1}
-    function Node(game, parent::Nullable{Node}, player, move)
-        @assert player==0 || player==1
+    function Node(game::Schotten, parent::Nullable{Node}, player::Player, move:: Tuple{Int64, Int64})
+        @assert player==top || player==bottom
         new(
             game,
             0,
@@ -27,21 +27,18 @@ mutable struct Node
 end
 
 
-function naive_rollout(node::Node)
-    topWon = false
-    bottomWon = false
-    player = node.player
-    game = node.game_state
-    while !(topWon || bottomWon)
+function naive_rollout(node::Node, winner_already)
+    winner = winner_already
+    game = deepcopy(node.game_state)
+    while winner == none
         actions = getvalidmoves(game)
         action = rand(actions)
-        game, topWon, bottomWon = applymove(game, action)
-        player = 1 - player
+        winner = applymove!(game, action)
     end
 
     
     node.N = 1
-    node.W = player == 1 && topWon || player == 0 && bottomWon ? 1 : -1
+    node.W = node.player == winner ? 1 : -1
 end
 
 function show(io::IO, node::Node, tabul::String)
@@ -70,9 +67,10 @@ function expand!(node::Node)
         return
     end
     for a in actions
-        child_game,_,_ = applymove(node.game_state, a)
-        child_node = Node(child_game, Nullable{Node}(node), 1 - node.player, a)
-        naive_rollout(child_node)
+        child_game = deepcopy(node.game_state)
+        winner = applymove!(child_game, a)
+        child_node = Node(child_game, Nullable{Node}(node), node.player, a)
+        naive_rollout(child_node, winner)
         back_propagate(node, child_node.N, child_node.W)
         push!(node.children, child_node)
     end
@@ -82,7 +80,7 @@ function select(node)
     if length(node.children) == 0
         return node
     end
-    sign = node.player == 1 ? -1 : 1
+    sign = node.player == node.game_state.turn ? -1 : 1
     UCT_scores = [sign * child.W / child.N + C * sqrt(log(node.N)/child.N) for child in node.children]
     _, chosen_child_idx = findmax(UCT_scores)
     return select(node.children[chosen_child_idx])
@@ -115,7 +113,7 @@ function run_mcts!(node, time_budget=10)
     return maxNode(node.children).move
 end
     
-Node(game) = Node(game, Nullable{Node}(), 0, (0,0))
+Node(game) = Node(game, Nullable{Node}(), top, (0,0))
 
 function testperf(numiter, time_budget=10)
     for i in 1:numiter
