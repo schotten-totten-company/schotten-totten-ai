@@ -1,6 +1,6 @@
-Byte=UInt8
-ByteArray=Array{Byte, 1}
-ByteMatrix=Array{Byte, 2}
+const Byte=UInt8
+const ByteArray=Vector{Byte}
+const ByteMatrix=Array{Byte, 2}
 
 
 
@@ -15,13 +15,15 @@ struct Schotten
     board::ByteMatrix
     next_player_hand::ByteArray
     deck::ByteArray
+    milestone_choice::Vector{Int}
+    card_choice::Vector{Int}
+    valid_moves::Vector{Tuple{Int, Int}}
     function Schotten(prev_player_hand::ByteArray, board::ByteMatrix, next_player_hand::ByteArray, deck::ByteArray)
         @assert length(prev_player_hand) == NB_CARDS_IN_HAND
         @assert length(next_player_hand) == NB_CARDS_IN_HAND
         @assert size(board) == BOARD_SIZE
-        # TODO: validate card completion and deck
 
-        new(prev_player_hand, board, next_player_hand, deck)
+        new(prev_player_hand, board, next_player_hand, deck,Int[],Int[],Tuple{Int, Int}[])
     end
 end
 
@@ -60,9 +62,23 @@ end
 
 
 function getvalidmoves(game::Schotten)
-    milestone_choice = [i for i=1:NB_MILESTONES  if game.board[4,i] == 0 && countnz(game.board[5:end,i]) < 3]
-    card_choice = [i for i=1:NB_CARDS_IN_HAND if  game.next_player_hand[i] != 0]
-    return [(card, milestone) for card in card_choice for milestone in milestone_choice]
+    resize!(game.milestone_choice, 0)
+    resize!(game.card_choice, 0)
+    resize!(game.valid_moves, 0)
+    for i = 1:NB_MILESTONES
+        if game.board[4,i] == 0 && @views countnz(game.board[5:end, i]) < 3
+            push!(game.milestone_choice, i)
+        end
+    end
+    for i = 1:NB_CARDS_IN_HAND
+        if game.next_player_hand[i] != 0
+            push!(game.card_choice, i)
+        end
+    end
+    for card in game.card_choice, milestone in game.milestone_choice
+        push!(game.valid_moves, (card, milestone))
+    end
+return game.valid_moves
 end
 
 function applymove(game, move)
