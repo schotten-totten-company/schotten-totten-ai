@@ -144,7 +144,7 @@ function applymove!(game, move)
     # check if can reclaim milestone
     for i in 1:9
         if milestone_line[i] == 0
-            @views milestone_line[i] = winsMilestone(game.board[5:7, i], game.board[1:3, i], i == milestone_idx)
+            @views milestone_line[i] = winsMilestone(game.board[5:7, i], game.board[1:3, i], game.turn)
         end
     end
 
@@ -263,7 +263,7 @@ function evaluateside(side)
 end
 
 
-function winsMilestone(topSide, bottomSide, justPlayedCard)
+function winsMilestone(topSide, bottomSide, justPlayedCard::Player)
     if (countnz(topSide) < 3  ||  countnz(bottomSide) < 3)
          return none
     end
