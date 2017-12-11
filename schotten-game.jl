@@ -12,6 +12,11 @@ const BOARD_SIZE = (NB_SLOT_IN_MILESTONE, NB_MILESTONES)
 
 @enum Player::Byte none top bottom
 
+function Base.zero(::Type{Tuple{Int64, Int64}})
+    return (0, 0)
+end
+
+
 mutable struct Schotten
     
     top_hand::ByteVector
@@ -21,17 +26,22 @@ mutable struct Schotten
     turn::Player
     
     milestone_choice::Vector{Int}
+    nb_milestone_choice::Int
     card_choice::Vector{Int}
+    nb_card_choice::Int
     valid_moves::Vector{Tuple{Int, Int}}
+    nb_valid_moves::Int
+    
     
     function Schotten(top_hand::ByteVector, board::ByteMatrix, bottom_hand::ByteVector, deck::ByteVector, turn::Player)
         @assert length(top_hand) == NB_CARDS_IN_HAND
         @assert length(bottom_hand) == NB_CARDS_IN_HAND
         @assert size(board) == BOARD_SIZE
 
-        new(top_hand, board, bottom_hand, deck, turn, Int[],Int[],Tuple{Int, Int}[])
+        new(top_hand, board, bottom_hand, deck, turn, zeros(NB_MILESTONES), 0, zeros(NB_CARDS_IN_HAND), 0, zeros(Tuple{Int, Int}, NB_CARDS_IN_HAND * NB_MILESTONES), 0)
     end
 end
+
 
 generatedeck() = shuffle(Byte[i*10 + j for i=1:NB_MILESTONES for j=1:NB_SLOT_IN_MILESTONE]::ByteVector)
 
@@ -80,9 +90,10 @@ end
 
 
 function getvalidmoves(game::Schotten)
-    resize!(game.milestone_choice, 0)
-    resize!(game.card_choice, 0)
-    resize!(game.valid_moves, 0)
+    game.nb_milestone_choice = 0
+    game.nb_card_choice = 0
+    game.nb_valid_moves = 0
+
     if game.turn == top
         milestone_idx = 1:3
         hand = game.top_hand
@@ -94,18 +105,21 @@ function getvalidmoves(game::Schotten)
 
     for i = 1:NB_MILESTONES
         if game.board[4,i] == 0 && @views countnz(game.board[milestone_idx, i]) < 3
-            push!(game.milestone_choice, i)
+            game.nb_milestone_choice += 1
+            game.milestone_choice[game.nb_milestone_choice] = i
         end
     end
     for i = 1:NB_CARDS_IN_HAND
         if hand[i] != 0
-            push!(game.card_choice, i)
+            game.nb_card_choice += 1
+            game.card_choice[game.nb_card_choice] = i
         end
     end
-    for card in game.card_choice, milestone in game.milestone_choice
-        push!(game.valid_moves, (card, milestone))
+    for card_idx in 1:game.nb_card_choice, milestone_idx in 1:game.nb_milestone_choice
+        game.nb_valid_moves += 1
+        game.valid_moves[game.nb_valid_moves] = (game.card_choice[card_idx], game.milestone_choice[milestone_idx])
     end
-return game.valid_moves
+return @views game.valid_moves[1:game.nb_valid_moves]
 end
 
 function applymove!(game, move)
