@@ -1,4 +1,4 @@
-
+using Profile
 
 include("./schotten-game.jl")
 
@@ -125,13 +125,11 @@ function testperf(numiter, time_budget=10)
     end
 end
 
-testperf(1,1)
+@time testperf(1,1)
 
-
-using ProfileView
 
 Profile.clear()
-@profile testperf(1)
 
-ProfileView.view()
+@time testperf(1)
+
 

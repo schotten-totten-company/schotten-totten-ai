@@ -1,3 +1,5 @@
+using StaticArrays
+
 const Byte=UInt8
 const ByteVector=Vector{Byte}
 const ByteMatrix=Array{Byte, 2}
@@ -104,7 +106,7 @@ function getvalidmoves(game::Schotten)
     end
 
     for i = 1:NB_MILESTONES
-        if game.board[4,i] == 0 && @views countnz(game.board[milestone_idx, i]) < 3
+        if game.board[4,i] == 0 && count(!iszero, @view game.board[milestone_idx, i]) < 3
             game.nb_milestone_choice += 1
             game.milestone_choice[game.nb_milestone_choice] = i
         end
@@ -119,7 +121,7 @@ function getvalidmoves(game::Schotten)
         game.nb_valid_moves += 1
         game.valid_moves[game.nb_valid_moves] = (game.card_choice[card_idx], game.milestone_choice[milestone_idx])
     end
-return @views game.valid_moves[1:game.nb_valid_moves]
+return @view game.valid_moves[1:game.nb_valid_moves]
 end
 
 function applymove!(game, move)
@@ -259,26 +261,19 @@ function Base.show(io::IO, game::Schotten)
     println(deck)
 end
 
-function count(array, elem)
-    count = 0
-    for a in array
-        count += a == elem ? 1 : 0 
-    end
-end
-
-function evaluateside(side)
-    numbers = sort([div(i, 10) for i=side])
-    colors = [i % 10 for i=side]
+@inline function evaluateside(side)
+    numbers = sort!(@MVector [div(side[1], 10), div(side[2], 10), div(side[3], 10) ])
+    colors = @SVector [side[1] % 10, side[2] % 10, side[3] % 10]
     total = sum(numbers)
-    total += sum([x - y for (x,y)=zip(numbers[2:end], numbers[1:end-1])]) == length(numbers) - 1 ? 100 : 0 # suite
-    total += count(colors, colors[1]) == length(colors) ? 100 :  0 # couleur
-    total += count(numbers, numbers[1]) == length(numbers) ? 100 : 0 # brelan
+    total += numbers[1] + 2 == numbers[2] + 1 == numbers[1] ? 100 : 0 # suite
+    total += count(c -> c == colors[1], colors) == length(colors) ? 100 :  0 # couleur
+    total += count(n -> n == numbers[1], numbers) == length(numbers) ? 100 : 0 # brelan
     return total
 end
 
 
-function winsMilestone(topSide, bottomSide, justPlayedCard::Player)
-    if (countnz(topSide) < 3  ||  countnz(bottomSide) < 3)
+@inline function winsMilestone(topSide, bottomSide, justPlayedCard::Player)
+    if (count(!iszero, topSide) < 3  ||  count(!iszero, bottomSide) < 3)
          return none
     end
 
