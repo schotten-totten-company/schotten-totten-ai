@@ -262,12 +262,12 @@ function Base.show(io::IO, game::Schotten)
 end
 
 @inline function evaluateside(side)
-    numbers = sort!(@MVector [div(side[1], 10), div(side[2], 10), div(side[3], 10) ])
-    colors = @SVector [side[1] % 10, side[2] % 10, side[3] % 10]
+    @inbounds numbers = sort!(@MVector [div(side[1], 10), div(side[2], 10), div(side[3], 10) ])
+    @inbounds colors = @SVector [side[1] % 10, side[2] % 10, side[3] % 10]
     total = sum(numbers)
-    total += numbers[1] + 2 == numbers[2] + 1 == numbers[1] ? 100 : 0 # suite
-    total += count(c -> c == colors[1], colors) == length(colors) ? 100 :  0 # couleur
-    total += count(n -> n == numbers[1], numbers) == length(numbers) ? 100 : 0 # brelan
+    @inbounds total += numbers[1] + 2 == numbers[2] + 1 == numbers[1] ? 100 : 0 # suite
+    @inbounds total += count(c -> c == colors[1], colors) == length(colors) ? 100 :  0 # couleur
+    @inbounds total += count(n -> n == numbers[1], numbers) == length(numbers) ? 100 : 0 # brelan
     return total
 end
 

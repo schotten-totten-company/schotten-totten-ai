@@ -128,6 +128,7 @@ end
 @time testperf(1,1)
 
 
+# Profile.clear_malloc_data()
 Profile.clear()
 
 @time testperf(1)
