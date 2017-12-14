@@ -40,6 +40,7 @@ typedef struct {
     Move moves[NB_CARDS_IN_HAND*NB_MILESTONES];
 } Schotten;
 
+void compute_valid_moves(Schotten * game);
 
 void generate_cards(uint8_t deck[NB_CARDS_ON_BOARD]) {
     for (size_t i=0; i < NB_MILESTONES; i++) {
@@ -103,6 +104,8 @@ Schotten * new_game() {
     game->player = rand_int(1,3); //TOP OR BOTTOM
     draw_n_card(game, game->top_hand, NB_CARDS_IN_HAND);
     draw_n_card(game, game->bottom_hand, NB_CARDS_IN_HAND);
+
+    compute_valid_moves(game);
 
     return game;
 }
@@ -270,7 +273,9 @@ Player wins_milestone(
     }
 }
         
-Player apply_move(Schotten * game, Move move) {
+Player apply_move(Schotten * game, size_t move_idx) {
+    assert(move_idx < game->nb_moves);
+    Move move = game->moves[move_idx];
     size_t card_idx = move.card_idx;
     size_t milestone_idx = move.milestone_idx;
     size_t side_idx = 0;
@@ -349,6 +354,8 @@ Player apply_move(Schotten * game, Move move) {
 
     game->player = game->player == TOP ? BOTTOM : TOP;
 
+    compute_valid_moves(game);
+
     return NONE;
 }
 
@@ -359,9 +366,8 @@ int main() {
     while(true) {
         print_game(game);
         compute_valid_moves(game);
-        int rand_idx = rand_int(0, game->nb_moves);
-        Move move = game->moves[rand_idx];
-        Player winner = apply_move(game, move);
+        int move_idx = rand_int(0, game->nb_moves);
+        Player winner = apply_move(game, move_idx);
         if(winner == TOP) {
             print_game(game);
             printf("### TOP WIN ###\n");
