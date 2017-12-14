@@ -3,16 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define NB_MILESTONES 9
+#define NB_CARDS_IN_SIDE 3
 #define NB_SLOT_IN_MILESTONE 7
 #define NB_CARDS_IN_HAND 6
 #define NB_CARDS_ON_BOARD (NB_MILESTONES*NB_SLOT_IN_MILESTONE)
 
 typedef enum {
-    NONE,
-    TOP,
-    BOTTOM,
+    NONE = 0,
+    TOP = 1,
+    BOTTOM = 2,
 } Player;
 
 typedef struct {
@@ -41,17 +43,26 @@ typedef struct {
 
 void generate_cards(uint8_t deck[NB_CARDS_ON_BOARD]) {
     for (size_t i=0; i < NB_MILESTONES; i++) {
-        for(size_t j=0; j < NB_SLOT_IN_MILESTONE; j++) {
+        for(size_t j=0; j < NB_SLOT_IN_MILESTONE-1; j++) {
             deck[i*NB_SLOT_IN_MILESTONE + j] = (i + 1)*10 + j + 1;
         }
     }
 }
 
-int rand_int(int min, int max) {
-    assert(max > min);
-    int range = max - min;
-    assert(range < RAND_MAX);
-    return rand() % range + min;
+int rand_int(int start, int end) {
+/* return a random number between 0 and limit exclusive.
+ */
+
+    int range = end - start;
+
+    int divisor = RAND_MAX/range;
+    int retval;
+
+    do { 
+        retval = rand() / divisor;
+    } while (retval > range - 1);
+
+    return retval + start;
 }
 
 void shuffle(uint8_t deck[NB_CARDS_ON_BOARD]) {
@@ -135,8 +146,8 @@ void compute_valid_moves(Schotten * game) {
     game->nb_moves = 0;
     for(size_t i=0; i<game->nb_card_choice; i++) {
         for(size_t j=0; j<game->nb_milestone_choice; j++) {
-            game->moves[game->nb_moves].card_idx = i;
-            game->moves[game->nb_moves].milestone_idx = j;
+            game->moves[game->nb_moves].card_idx = game->card_choice[i];
+            game->moves[game->nb_moves].milestone_idx = game->milestone_choice[j];
             game->nb_moves++;
         }
     }
@@ -198,10 +209,170 @@ void print_moves(Schotten * game) {
     printf("\n");
 }
 
+// test sort at insert
+void sort_side(uint8_t side[NB_CARDS_IN_SIDE]) {
+    if (side[1] < side[0]) {
+        uint8_t tmp = side[0];
+        side[0] = side[1];
+        side[1] = tmp;
+    }
+    if (side[2] < side[1]) {
+        uint8_t tmp = side[1];
+        side[1] = side[2];
+        side[2] = tmp;
+    }
+    if (side[1] < side[0]) {
+        uint8_t tmp = side[0];
+        side[0] = side[1];
+        side[1] = tmp;
+    }
+}
+
+uint evaluate_side(uint8_t side[NB_CARDS_IN_SIDE]) {
+    uint8_t numbers[NB_CARDS_IN_SIDE] = {side[0] / 10, side[1] / 10, side[2] / 10};
+    uint8_t colors[NB_CARDS_IN_SIDE] = {side[0] % 10, side[1] % 10, side[2] % 10};
+
+    sort_side(numbers);
+
+    uint total = numbers[0] + numbers[1] + numbers[2];
+    total += numbers[0] + 1 == numbers[1]  && numbers[1] + 1 == numbers[2]  ? 100 : 0; // suite
+    total += colors[0] == colors[1] && colors[1] == colors[2] ? 200 :  0; // couleur
+    total += numbers[0] == numbers[1] && numbers[1] == numbers[2] ? 250 : 0; // brelan
+
+    return total;
+}
+
+Player wins_milestone(
+    uint8_t top_side[NB_CARDS_IN_SIDE],
+    uint8_t bottom_side[NB_CARDS_IN_SIDE],
+    Player just_played_card
+) {
+    if (
+        top_side[0] == 0
+        || top_side[1] == 0
+        || top_side[2] == 0
+        || bottom_side[0] == 0
+        || bottom_side[1] == 0
+        || bottom_side[2] == 0
+    ) {
+        return NONE;
+    }
+    
+    uint top_side_score = evaluate_side(top_side);
+    uint bottom_side_score = evaluate_side(bottom_side);
+
+    if (top_side_score == bottom_side_score){
+        return just_played_card == TOP ? BOTTOM: TOP; // the first who have played the card wins
+    } else if (top_side_score > bottom_side_score) {
+        return TOP;
+    } else {
+        return BOTTOM;
+    }
+}
+        
+Player apply_move(Schotten * game, Move move) {
+    size_t card_idx = move.card_idx;
+    size_t milestone_idx = move.milestone_idx;
+    size_t side_idx = 0;
+    uint8_t * hand = NULL;
+
+    if (game->player == TOP) {
+        hand = game->top_hand;
+        side_idx = 0;
+    } else { // bottom
+        assert(game->player == BOTTOM);
+        hand = game->bottom_hand;
+        side_idx = 4;
+    }
+        
+    size_t j=side_idx;
+    while (game->board[milestone_idx*NB_SLOT_IN_MILESTONE +j] != 0){
+        j += 1;
+    }
+
+    // play card
+    game->board[milestone_idx*NB_SLOT_IN_MILESTONE +j] = hand[card_idx];
+
+    // draw card
+    if (game->deck_size == 0)
+        hand[card_idx] = 0;
+    else
+        hand[card_idx] = draw_card(game);
+    
+
+    // check if can reclaim milestone
+    for (size_t i=0; i<NB_MILESTONES; i++) {
+        if (game->board[i*NB_SLOT_IN_MILESTONE + 3] == 0) {
+            game->board[i*NB_SLOT_IN_MILESTONE + 3] = wins_milestone(
+                &game->board[i*NB_SLOT_IN_MILESTONE + 4], 
+                &game->board[i*NB_SLOT_IN_MILESTONE],
+                game->player
+            );
+        }
+    }
+
+    // check if finished (current player wins)
+    uint strike = 0;
+    uint total = 0;
+    for (size_t i=0; i<NB_MILESTONES; i++) {
+        if (game->board[i*NB_SLOT_IN_MILESTONE + 3] == TOP) {
+            total += 1;
+            strike += 1;
+        } else {
+            strike = 0;
+        }
+        if (strike == 3) {
+            break;
+        }
+    }
+    if (strike == 3 || total == 5) {
+        return TOP;
+    }
+
+
+    strike = 0;
+    total = 0;
+    for (size_t i=0; i<NB_MILESTONES; i++) {
+        if (game->board[i*NB_SLOT_IN_MILESTONE + 3] == BOTTOM) {
+            total += 1;
+            strike += 1;
+        } else {
+            strike = 0;
+        }
+        if (strike == 3) {
+            break;
+        }
+    }
+    if (strike == 3 || total == 5) {
+        return BOTTOM;
+    }
+
+    game->player = game->player == TOP ? BOTTOM : TOP;
+
+    return NONE;
+}
+
+
 int main() {
+    srand(time(NULL)); 
     Schotten * game = new_game();
-    print_game(game);
-    printf("Player: %s\n\n",player_as_str(game->player));
-    compute_valid_moves(game);
-    print_moves(game);
+    while(true) {
+        print_game(game);
+        compute_valid_moves(game);
+        int rand_idx = rand_int(0, game->nb_moves);
+        Move move = game->moves[rand_idx];
+        Player winner = apply_move(game, move);
+        if(winner == TOP) {
+            print_game(game);
+            printf("### TOP WIN ###\n");
+            break;
+        }
+        if(winner == BOTTOM) {
+            print_game(game);
+            printf("### BOTTOM WIN ###\n");
+            break;   
+        }
+        printf("\n\n@@@@@@@@@@@@@ New Turn @@@@@@@@@@@@@@@\n\n");
+
+    }
 }
