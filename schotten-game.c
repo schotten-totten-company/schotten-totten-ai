@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <string.h>
 
 #define NB_MILESTONES 9
 #define NB_CARDS_IN_SIDE 3
@@ -41,6 +42,16 @@ typedef struct {
 } Schotten;
 
 void compute_valid_moves(Schotten * game);
+
+Schotten * clone_game(Schotten * game) {
+    Schotten * game_clone = (Schotten *)calloc(1, sizeof(Schotten));
+    if(!game) {
+        printf("Not enough memory!\n");
+        exit(-1);
+    }
+    memcpy(game_clone, game, sizeof(Schotten));
+    return game_clone;
+}
 
 void generate_cards(uint8_t deck[NB_CARDS_ON_BOARD]) {
     for (size_t i=0; i < NB_MILESTONES; i++) {
@@ -360,7 +371,7 @@ Player apply_move(Schotten * game, size_t move_idx) {
 }
 
 
-int main() {
+/*int main() {
     srand(time(NULL)); 
     Schotten * game = new_game();
     while(true) {
@@ -381,4 +392,4 @@ int main() {
         printf("\n\n@@@@@@@@@@@@@ New Turn @@@@@@@@@@@@@@@\n\n");
 
     }
-}
+}*/
