@@ -98,15 +98,17 @@ function getvalidmoves(game::Schotten)
 
     if game.turn == top
         milestone_idx = 1:3
+        idx_end = 3
         hand = game.top_hand
     else #bottom
         @assert game.turn == bottom
         milestone_idx = 5:7
+        idx_end = 7
         hand = game.bottom_hand
     end
 
     for i = 1:NB_MILESTONES
-        if game.board[4,i] == 0 && count(!iszero, @view game.board[milestone_idx, i]) < 3
+        if game.board[4,i] == 0 && game.board[idx_end, i] == 0 #optim only look at last!
             game.nb_milestone_choice += 1
             game.milestone_choice[game.nb_milestone_choice] = i
         end
@@ -265,9 +267,9 @@ end
     @inbounds numbers = sort!(@MVector [div(side[1], 10), div(side[2], 10), div(side[3], 10) ])
     @inbounds colors = @SVector [side[1] % 10, side[2] % 10, side[3] % 10]
     total = sum(numbers)
-    @inbounds total += numbers[1] + 2 == numbers[2] + 1 == numbers[1] ? 100 : 0 # suite
-    @inbounds total += count(c -> c == colors[1], colors) == length(colors) ? 100 :  0 # couleur
-    @inbounds total += count(n -> n == numbers[1], numbers) == length(numbers) ? 100 : 0 # brelan
+    @inbounds total += numbers[1] + 2 == numbers[2] + 1 == numbers[3] ? 100 : 0 # suite
+    @inbounds total += count(c -> c == colors[1], colors) == length(colors) ? 200 :  0 # couleur
+    @inbounds total += count(n -> n == numbers[1], numbers) == length(numbers) ? 250 : 0 # brelan
     return total
 end
 
