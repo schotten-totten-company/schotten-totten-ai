@@ -131,5 +131,5 @@ int main() {
     Node * root = new_node(game, NULL, game->player, 0);
     size_t move_idx = run_mcts(root, 10);
     Move move = game->moves[move_idx];
-    printf("Choosen move: hand_idx->%d, milestone_idx->%d", move.card_idx, move.milestone_idx);
+    printf("Choosen move: hand_idx->%d, milestone_idx->%d\n", move.card_idx, move.milestone_idx);
 }
