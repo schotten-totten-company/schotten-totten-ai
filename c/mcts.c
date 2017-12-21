@@ -1,6 +1,10 @@
-#include "schotten-game.c"
+#include "schotten-game.h"
 
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+#include <time.h>
 
 #define C 1
 
