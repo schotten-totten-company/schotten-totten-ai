@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <time.h>
 
+#include "mcts.h"
+
 #define C 1
 
 typedef struct Node {
@@ -117,8 +119,9 @@ double get_time_s() {
     return time.tv_sec + 1e-9*time.tv_nsec;
 }
 
-size_t run_mcts(Node * node, uint time_budget_s) {
+size_t run_mcts(Schotten * game, uint time_budget_s) {
     uint nb_selected_node = 0;
+    Node * node = new_node(game, NULL, game->player, 0);
     double start_time = get_time_s();
     while(get_time_s() - start_time < time_budget_s) {
         Node * selected_node = select_node(node);
@@ -130,10 +133,11 @@ size_t run_mcts(Node * node, uint time_budget_s) {
     return max_node(node->children, node->nb_children)->move_idx;
 }
 
-int main() {
+
+
+/*int main() {
     Schotten * game = new_game();
-    Node * root = new_node(game, NULL, game->player, 0);
-    size_t move_idx = run_mcts(root, 10);
+    size_t move_idx = run_mcts(game, 10);
     Move move = game->moves[move_idx];
     printf("Choosen move: hand_idx->%d, milestone_idx->%d\n", move.card_idx, move.milestone_idx);
-}
+}*/

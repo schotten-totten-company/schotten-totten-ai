@@ -44,6 +44,7 @@ Player apply_move(Schotten * game, size_t move_idx);
 int rand_int(int start, int end);
 Schotten * clone_game(Schotten * game);
 Schotten * new_game();
+void print_game(Schotten * game);
 
 
 #endif //_H_SCHOTTEN_GAME

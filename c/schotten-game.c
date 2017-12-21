@@ -21,8 +21,8 @@ Schotten * clone_game(Schotten * game) {
 
 void generate_cards(uint8_t deck[NB_CARDS_ON_BOARD]) {
     for (size_t i=0; i < NB_MILESTONES; i++) {
-        for(size_t j=0; j < NB_SLOT_IN_MILESTONE-1; j++) {
-            deck[i*NB_SLOT_IN_MILESTONE + j] = (i + 1)*10 + j + 1;
+        for(size_t j=0; j < NB_CARDS_IN_HAND; j++) {
+            deck[i*NB_CARDS_IN_HAND + j] = (i + 1)*10 + j + 1;
         }
     }
 }

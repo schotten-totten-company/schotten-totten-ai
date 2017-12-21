@@ -2,7 +2,7 @@ BUILDDIR = build
 TARGET = $(BUILDDIR)/schotten
 LIBS = -lm
 CC = gcc
-CFLAGS = -g  -march=native -O3 #-O5 #-Wall
+CFLAGS = -g  -march=native #-O3 #-O5 #-Wall
 
 
 .PHONY: default all clean
