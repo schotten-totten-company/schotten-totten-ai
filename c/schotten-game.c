@@ -287,8 +287,8 @@ Player apply_move(Schotten * game, size_t move_idx) {
     for (size_t i=0; i<NB_MILESTONES; i++) {
         if (game->board[i*NB_SLOT_IN_MILESTONE + 3] == 0) {
             game->board[i*NB_SLOT_IN_MILESTONE + 3] = wins_milestone(
-                &game->board[i*NB_SLOT_IN_MILESTONE + 4], 
-                &game->board[i*NB_SLOT_IN_MILESTONE],
+                &game->board[i*NB_SLOT_IN_MILESTONE], 
+                &game->board[i*NB_SLOT_IN_MILESTONE + 4],
                 game->player
             );
         }
