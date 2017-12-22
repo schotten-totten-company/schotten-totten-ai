@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "make",
+            "taskName": "make",
             "type": "shell",
             "command": "make -C c clean;make -C c"
         }
