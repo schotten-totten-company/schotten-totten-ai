@@ -91,7 +91,7 @@ Node *  select_node(Node * node) {
     if(node->nb_children == 0) {
         return node;
     }
-    double sign = node->player == node->game_state->player ? -1 : 1;
+    double sign = node->player == node->game_state->player ? 1 : -1;
     double UTC_scores[node->nb_children];
     for(size_t i =0; i<node->nb_children; i++) {
         Node * child = node->children[i];

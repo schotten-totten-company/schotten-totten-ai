@@ -44,7 +44,7 @@ int rand_int(int start, int end) {
 }
 
 void shuffle(uint8_t deck[DECK_SIZE],  size_t deck_size) {
-    for (size_t i=0; i<deck_size; i++){
+    for (size_t i=0; i<deck_size*deck_size; i++){
         size_t from_idx = rand_int(0, deck_size);
         size_t to_idx = rand_int(0, deck_size);
         uint8_t tmp = deck[from_idx];
