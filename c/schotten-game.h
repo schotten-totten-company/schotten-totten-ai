@@ -9,6 +9,7 @@
 #define NB_SLOT_IN_MILESTONE 7
 #define NB_CARDS_IN_HAND 6
 #define NB_CARDS_ON_BOARD (NB_MILESTONES*NB_SLOT_IN_MILESTONE)
+#define DECK_SIZE (NB_CARDS_IN_HAND*NB_MILESTONES)
 
 typedef enum {
     NONE = 0,
@@ -25,7 +26,7 @@ typedef struct {
     uint8_t top_hand[NB_CARDS_IN_HAND];
     uint8_t board[NB_CARDS_ON_BOARD];
     uint8_t bottom_hand[NB_CARDS_IN_HAND];
-    uint8_t deck[NB_CARDS_ON_BOARD];
+    uint8_t deck[DECK_SIZE];
     size_t deck_size;
     Player player;
 

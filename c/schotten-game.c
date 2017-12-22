@@ -43,10 +43,10 @@ int rand_int(int start, int end) {
     return retval + start;
 }
 
-void shuffle(uint8_t deck[NB_CARDS_ON_BOARD]) {
-    for (size_t i=0; i<NB_CARDS_ON_BOARD; i++){
-        size_t from_idx = rand_int(0, NB_CARDS_ON_BOARD);
-        size_t to_idx = rand_int(0, NB_CARDS_ON_BOARD);
+void shuffle(uint8_t deck[DECK_SIZE],  size_t deck_size) {
+    for (size_t i=0; i<deck_size; i++){
+        size_t from_idx = rand_int(0, deck_size);
+        size_t to_idx = rand_int(0, deck_size);
         uint8_t tmp = deck[from_idx];
         deck[from_idx] = deck[to_idx];
         deck[to_idx] = tmp;    
@@ -55,7 +55,8 @@ void shuffle(uint8_t deck[NB_CARDS_ON_BOARD]) {
 
 void generate_deck(Schotten * game) {
     generate_cards(game->deck);
-    game->deck_size = NB_CARDS_ON_BOARD;
+    game->deck_size = DECK_SIZE;
+    shuffle(game->deck, game->deck_size);
 }
 
 uint8_t draw_card(Schotten * game) {
