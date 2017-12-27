@@ -13,6 +13,7 @@ size_t run_human(Schotten * game, uint time_budget_s) {
         scanf("%u", &move.milestone_idx);
         int move_idx = find_move_idx(game, move);
         if(move_idx != -1) {
+            free(game);
             return move_idx;
         } else {
             printf("Wrong move!\n");

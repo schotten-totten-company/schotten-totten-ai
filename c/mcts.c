@@ -119,6 +119,14 @@ double get_time_s() {
     return time.tv_sec + 1e-9*time.tv_nsec;
 }
 
+void free_node(Node * node) {
+    for(size_t i=0; i<node->nb_children; i++) {
+        free_node(node->children[i]);
+    }
+    free(node->game_state);
+    free(node);
+}
+
 size_t run_mcts(Schotten * game, uint time_budget_s) {
     uint nb_selected_node = 0;
     Node * node = new_node(game, NULL, game->player, 0);
@@ -130,7 +138,9 @@ size_t run_mcts(Schotten * game, uint time_budget_s) {
     }
     printf("Selections: %d\n", nb_selected_node);
 
-    return max_node(node->children, node->nb_children)->move_idx;
+    size_t move_idx = max_node(node->children, node->nb_children)->move_idx;
+    free_node(node);
+    return move_idx;
 }
 
 

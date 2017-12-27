@@ -11,6 +11,7 @@ GameManager * new_game_manager() {
         exit(-1);
     }
     manager->game = new_game();
+    return manager;
 }
 
 void register_strategy(GameManager * game_manager, Strategy strategy){
@@ -25,7 +26,7 @@ void register_strategy(GameManager * game_manager, Strategy strategy){
 void run_game(GameManager * game_manager, uint time_budget_s) {
     assert(game_manager->player1 != NULL && game_manager->player2 != NULL);
     while(true) {
-        //print_game(game_manager->game);
+        // print_game(game_manager->game);
 
         size_t move_idx;
         Schotten * new_game = clone_game(game_manager->game);
@@ -35,7 +36,7 @@ void run_game(GameManager * game_manager, uint time_budget_s) {
             assert(game_manager->game->player == BOTTOM);
             move_idx = game_manager->player2(new_game, time_budget_s);
         }
-        free(new_game);
+        // free(new_game);
 
         Player winner = apply_move(game_manager->game, move_idx);
         if(winner == TOP) {
