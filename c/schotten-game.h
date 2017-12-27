@@ -46,6 +46,7 @@ int rand_int(int start, int end);
 Schotten * clone_game(Schotten * game);
 Schotten * new_game();
 void print_game(Schotten * game);
+int find_move_idx(Schotten * game, Move move);
 
 
 #endif //_H_SCHOTTEN_GAME

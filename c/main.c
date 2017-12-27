@@ -1,6 +1,7 @@
 #include <time.h>
 
 #include "game-manager.h"
+#include "human.h"
 #include "mcts.h"
 
 int main() {

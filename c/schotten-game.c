@@ -337,6 +337,15 @@ Player apply_move(Schotten * game, size_t move_idx) {
     return NONE;
 }
 
+int find_move_idx(Schotten * game, Move move) {
+    for(int i=0; i<game->nb_moves;i++) {
+        if(move.card_idx == game->moves[i].card_idx && move.milestone_idx == game->moves[i].milestone_idx) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 /*int main() {
     srand(time(NULL)); 
