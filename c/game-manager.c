@@ -25,7 +25,7 @@ void register_strategy(GameManager * game_manager, Strategy strategy){
 void run_game(GameManager * game_manager, uint time_budget_s) {
     assert(game_manager->player1 != NULL && game_manager->player2 != NULL);
     while(true) {
-        print_game(game_manager->game);
+        //print_game(game_manager->game);
 
         size_t move_idx;
         Schotten * new_game = clone_game(game_manager->game);
@@ -39,11 +39,13 @@ void run_game(GameManager * game_manager, uint time_budget_s) {
 
         Player winner = apply_move(game_manager->game, move_idx);
         if(winner == TOP) {
+            printf("### GAME ENDED ###\n");
             print_game(game_manager->game);
             printf("### TOP WIN ###\n");
             break;
         }
         if(winner == BOTTOM) {
+            printf("### GAME ENDED ###\n");
             print_game(game_manager->game);
             printf("### BOTTOM WIN ###\n");
             break;   
