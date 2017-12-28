@@ -30,6 +30,7 @@ void run_game(GameManager * game_manager, uint time_budget_s) {
 
         size_t move_idx;
         Schotten * new_game = clone_game(game_manager->game);
+        make_player_view(new_game);
         if(game_manager->game->player == TOP) {
             move_idx = game_manager->player1(new_game, time_budget_s);
         } else {
@@ -54,4 +55,9 @@ void run_game(GameManager * game_manager, uint time_budget_s) {
         printf("\n\n@@@@@@@@@@@@@ New Turn @@@@@@@@@@@@@@@\n\n");
 
     }
+}
+
+void free_game_manager(GameManager * game_manager) {
+    free(game_manager->game);
+    free(game_manager);
 }

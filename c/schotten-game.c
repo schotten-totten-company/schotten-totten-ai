@@ -19,7 +19,47 @@ Schotten * clone_game(Schotten * game) {
     return game_clone;
 }
 
-void generate_cards(uint8_t deck[NB_CARDS_ON_BOARD]) {
+void make_player_view(Schotten * game) {
+    assert(game->player == TOP || game->player == BOTTOM);
+    uint8_t * hand = game->player == TOP ? game->bottom_hand : game->top_hand;
+    for(size_t i=0; i<NB_CARDS_IN_HAND; i++) {
+        if(hand[i] != 0) {
+            hand[i] = UNKNOWN_CARD;
+        }
+    }
+    for(size_t i=0; i<DECK_SIZE; i++) {
+       game->deck[i] = UNKNOWN_CARD;
+    }
+}
+
+bool find_card(Schotten * player_view, uint8_t card) {
+    uint8_t * hand = player_view->player == TOP ? player_view->top_hand : player_view->bottom_hand;
+    for(size_t i=0; i<NB_CARDS_IN_HAND; i++) {
+        if(hand[i] == card) {
+            return true;
+        }
+    }
+    for(size_t i=0; i<NB_CARDS_ON_BOARD; i++) {
+        if(player_view->board[i] == card) {
+            return true;
+        }
+    }
+    return false;
+}
+
+uint8_t seek_card(Schotten * player_view, uint8_t cards[DECK_SIZE], size_t * card_idx) {
+    while(find_card(player_view, cards[*card_idx])) {
+        *card_idx += 1;
+        assert(*card_idx < DECK_SIZE);
+    }
+    uint8_t card = cards[*card_idx];
+    *card_idx += 1;
+    return card;
+}
+
+
+
+void generate_cards(uint8_t deck[DECK_SIZE]) {
     for (size_t i=0; i < NB_MILESTONES; i++) {
         for(size_t j=0; j < NB_CARDS_IN_HAND; j++) {
             deck[i*NB_CARDS_IN_HAND + j] = (i + 1)*10 + j + 1;
@@ -71,6 +111,24 @@ void draw_n_card(Schotten * game, uint8_t * hand, size_t nb_cards) {
         hand[i] = draw_card(game);
     }
 }
+
+void determinize_game(Schotten * player_view) {
+    uint8_t cards[DECK_SIZE] = {0};
+    generate_cards(cards);
+    shuffle(cards, DECK_SIZE);
+    size_t card_idx = 0;
+    uint8_t * hand = player_view->player == TOP ? player_view->bottom_hand : player_view->top_hand;
+    for(size_t i=0; i<NB_CARDS_IN_HAND; i++) {
+        if(hand[i] != 0) {
+            hand[i] = seek_card(player_view, cards, &card_idx);
+        }
+    }
+    for(size_t i=0; i<player_view->deck_size; i++) {
+        player_view->deck[i] = seek_card(player_view, cards, &card_idx);
+    }
+    assert(card_idx <= DECK_SIZE);
+}
+
 
 Schotten * new_game() {
     Schotten * game = (Schotten * )calloc(1, sizeof(Schotten));

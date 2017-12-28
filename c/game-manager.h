@@ -15,6 +15,7 @@ typedef struct {
 GameManager * new_game_manager();
 void register_strategy(GameManager * game_manager, Strategy strategy);
 void run_game(GameManager * game_manager, uint time_budget_s);
+void free_game_manager(GameManager * game_manager);
 
 
 #endif //_H_GAME_MANAGER

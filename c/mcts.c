@@ -9,6 +9,7 @@
 #include "mcts.h"
 
 #define C 1
+#define NB_DETERMINIZATIONS (2)
 
 typedef struct Node {
     Schotten * game_state;
@@ -127,9 +128,8 @@ void free_node(Node * node) {
     free(node);
 }
 
-size_t run_mcts(Schotten * game, uint time_budget_s) {
+void run_mcts_on_node(Node * node, uint time_budget_s) {
     uint nb_selected_node = 0;
-    Node * node = new_node(game, NULL, game->player, 0);
     double start_time = get_time_s();
     while(get_time_s() - start_time < time_budget_s) {
         Node * selected_node = select_node(node);
@@ -137,13 +137,38 @@ size_t run_mcts(Schotten * game, uint time_budget_s) {
         expand(selected_node);
     }
     printf("Selections: %d\n", nb_selected_node);
+}
 
+size_t run_mcts(Schotten * game, uint time_budget_s) {
+    Node * node = new_node(game, NULL, game->player, 0);
+    run_mcts_on_node(node, time_budget_s);
     size_t move_idx = max_node(node->children, node->nb_children)->move_idx;
     free_node(node);
     return move_idx;
 }
 
-
+size_t run_mcts_with_determinization(Schotten * game, uint time_budget_s) {
+    Node * nodes[NB_DETERMINIZATIONS] = {0};
+    for(size_t i=0; i<NB_DETERMINIZATIONS;i++) {
+        Schotten * game_clone = clone_game(game);
+        determinize_game(game_clone);
+        nodes[i] = new_node(game_clone, NULL, game->player, 0);
+        run_mcts_on_node(nodes[i] ,time_budget_s);
+    }
+    Node * main_node = nodes[0];
+    for(size_t j=1; j<NB_DETERMINIZATIONS; j++) {
+        assert(nodes[j]->nb_children == main_node->nb_children);
+        for(size_t i=0; i<main_node->nb_children;i++) {
+            main_node->children[i]->N += nodes[j]->children[i]->N;
+        }
+    }
+    size_t move_idx = max_node(main_node->children, main_node->nb_children)->move_idx;
+    for(size_t i=0; i<NB_DETERMINIZATIONS;i++) {
+        free_node(nodes[i]);
+    }
+    free(game);
+    return move_idx;
+}
 
 /*int main() {
     Schotten * game = new_game();

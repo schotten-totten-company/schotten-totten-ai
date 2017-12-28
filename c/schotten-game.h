@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define UNKNOWN_CARD (99)
+
 #define NB_MILESTONES 9
 #define NB_CARDS_IN_SIDE 3
 #define NB_SLOT_IN_MILESTONE 7
@@ -47,6 +49,8 @@ Schotten * clone_game(Schotten * game);
 Schotten * new_game();
 void print_game(Schotten * game);
 int find_move_idx(Schotten * game, Move move);
+void make_player_view(Schotten * game);
+void determinize_game(Schotten * player_view);
 
 
 #endif //_H_SCHOTTEN_GAME
