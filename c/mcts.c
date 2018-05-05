@@ -9,7 +9,7 @@
 #include "mcts.h"
 
 #define C 1
-#define NB_DETERMINIZATIONS (2)
+#define NB_DETERMINIZATIONS (10)
 
 typedef struct Node {
     Schotten * game_state;

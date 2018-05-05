@@ -9,6 +9,7 @@ int main() {
     GameManager * game_manager = new_game_manager();
     register_strategy(game_manager, run_mcts_with_determinization);
     register_strategy(game_manager, run_mcts_with_determinization);
+    // register_strategy(game_manager, run_human);
     run_game(game_manager, 1);
     free_game_manager(game_manager);
 }
